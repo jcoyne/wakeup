@@ -16,7 +16,6 @@
 
     <div>
       <button @click="step">Step {{state}}</button>
-      <input>{{time}}</input>
     </div>
   </div>
 </template>
@@ -34,7 +33,7 @@ export default {
       now: new Date(),
       state: 0,
       max: 4,
-      offset: 545, // Set to 0 in production
+      offset: 0, // Set to 0 in production
       messages: [],
       publicPath: process.env.BASE_URL,
       states: [
@@ -54,9 +53,17 @@ export default {
   methods: {
     step: function(event) {
       document.getElementById('audio').play();
-      if (this.state < this.max) {
+      if (this.state < this.states.length) {
+        this.states[this.state].active = true
         this.state += 1
+      } else {
+        this.state = 0
+        this.messages = []
+        this.states.forEach((state) => { state.active = false } )
       }
+    },
+    isLaterInTheDay: function() {
+      return this.time - this.states[0].time > 200
     },
     updateState: function() {
       var inactive = this.states.filter(state => !state.active)
@@ -64,13 +71,12 @@ export default {
 
       inactive.forEach((state) => {
         let triggerTime = state.time + this.offset
-        if (triggerTime <= this.time) {
+        if (triggerTime <= this.time && !this.isLaterInTheDay()) {
           state.active = true
           console.log(`${state.image} is now active`)
           this.messages.unshift(`Time to ${state.label}!`)
           document.getElementById(state.image).className = 'state active'
           sound.play()
-
         }
       })
     }

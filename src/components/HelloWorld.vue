@@ -7,6 +7,12 @@
     <img src="../assets/breakfast.png" id="breakfast" class="state">
     <img src="../assets/hairbrushing.png" id="hairbrushing" class="state">
     <img src="../assets/bus.png" id="bus" class="state">
+    <audio :src="`${publicPath}ding.mp3`" id="audio"></audio>
+    <ul id="messages">
+      <li v-for="item in messages">
+        {{item}}
+      </li>
+    </ul>
 
     <div>
       <button @click="step">Step {{state}}</button>
@@ -28,14 +34,16 @@ export default {
       now: new Date(),
       state: 0,
       max: 4,
-      offset: 500, // Set to 0 in production
-      states: {
-        'wakeup': 550,
-        'toothbrushing': 610,
-        'breakfast': 620,
-        'hairbrushing': 630,
-        'bus': 645,
-      }
+      offset: 545, // Set to 0 in production
+      messages: [],
+      publicPath: process.env.BASE_URL,
+      states: [
+        { image: 'wakeup', time: 550, active: false, label: 'wake up' },
+        { image: 'toothbrushing', time: 610, active: false, label: 'brush teeth' },
+        { image: 'breakfast', time: 620, active: false, label: 'eat breakfast' },
+        { image: 'hairbrushing', time: 630, active: false, label: 'brush hair' },
+        { image: 'bus', time: 645, active: false, label: 'go to the bus'}
+      ]
     }
   },
   computed: {
@@ -45,18 +53,26 @@ export default {
   },
   methods: {
     step: function(event) {
+      document.getElementById('audio').play();
       if (this.state < this.max) {
         this.state += 1
       }
     },
     updateState: function() {
-      for (var value in this.states) {
-        let triggerTime = this.states[value] + this.offset
+      var inactive = this.states.filter(state => !state.active)
+      var sound = document.getElementById('audio')
+
+      inactive.forEach((state) => {
+        let triggerTime = state.time + this.offset
         if (triggerTime <= this.time) {
-          console.log(`${value} is now active`)
-          document.getElementById(value).className = 'state active'
+          state.active = true
+          console.log(`${state.image} is now active`)
+          this.messages.unshift(`Time to ${state.label}!`)
+          document.getElementById(state.image).className = 'state active'
+          sound.play()
+
         }
-      }
+      })
     }
   },
   created () {
@@ -82,5 +98,10 @@ export default {
 
 h3 {
   margin: 40px 0 0;
+}
+
+ul {
+  list-style: none;
+  font-size: 18pt;
 }
 </style>

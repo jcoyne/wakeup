@@ -4,7 +4,9 @@
     <state
       v-for="state in states"
       v-bind:key="state.image"
+      v-bind:active="state.active"
       v-bind:state="state"
+      v-on:state-change="displayMessage"
     ></state>
     <!-- set progressbar -->
     <audio :src="`${publicPath}ding.mp3`" id="audio"></audio>
@@ -15,7 +17,7 @@
     </ul>
 
     <div>
-      <button @click="step">Step {{state}}</button>
+      <button @click="testButtonClicked">{{stepLabel}}</button>
     </div>
   </div>
 </template>
@@ -34,9 +36,7 @@ export default {
   data: function() {
     return {
       now: new Date(),
-      state: 0,
-      max: 4,
-      offset: 0, // Set to 0 in production
+      timeOffset: 0, // Set to 0 in production
       messages: [],
       publicPath: process.env.BASE_URL,
       states: [
@@ -49,41 +49,53 @@ export default {
     }
   },
   computed: {
+    stepLabel: function() {
+      if (this.inactive.length == 0)
+        return 'Reset'
+
+      return 'Test next step'
+    },
     time() {
       return this.now.getHours() *100 + this.now.getMinutes()
+    },
+    inactive() {
+      return this.states.filter(state => !state.active)
     }
   },
   methods: {
-    step: function(event) {
-      document.getElementById('audio').play();
-      if (this.state < this.states.length) {
-        this.states[this.state].active = true
-        this.state += 1
-      } else {
-        this.state = 0
-        this.messages = []
-        this.states.forEach((state) => { state.active = false } )
+    displayMessage: function(event) {
+      this.messages.unshift(`Time to ${event}!`)
+      this.playSound()
+    },
+    playSound: function() {
+      document.getElementById('audio').play()
+    },
+    testButtonClicked: function(event) {
+      if (this.inactive.length == 0) {
+        return this.resetSteps()
       }
+
+      this.inactive[0].active = true
+    },
+    resetSteps: function(){
+      this.messages = []
+      this.states.forEach((state) => { state.active = false } )
     },
     isLaterInTheDay: function() {
       return this.time - this.states[0].time > 200
     },
     updateState: function() {
-      var inactive = this.states.filter(state => !state.active)
-      var sound = document.getElementById('audio')
-
-      inactive.forEach((state) => {
-        let triggerTime = state.time + this.offset
+      this.inactive.forEach((state) => {
+        let triggerTime = state.time + this.timeOffset
         if (triggerTime <= this.time && !this.isLaterInTheDay()) {
           state.active = true
-          console.log(`${state.image} is now active`)
-          this.messages.unshift(`Time to ${state.label}!`)
-          sound.play()
         }
       })
     }
   },
   created () {
+    this.sound = document.getElementById('audio')
+
     this.interval = setInterval(() => {
       this.now = new Date()
       this.updateState()
@@ -95,19 +107,6 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style>
-.state {
-  height: 200px;
-	filter: grayscale(100%) contrast(50%);
-}
-
-.state.active {
-  filter: none;
-}
-
-h3 {
-  margin: 40px 0 0;
-}
-
 ul {
   list-style: none;
   font-size: 18pt;

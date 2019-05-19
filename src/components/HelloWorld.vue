@@ -1,12 +1,12 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
+    <state
+      v-for="state in states"
+      v-bind:key="state.image"
+      v-bind:state="state"
+    ></state>
     <!-- set progressbar -->
-    <img src="../assets/wakeup.png" id="wakeup" class="state">
-    <img src="../assets/toothbrushing.png" id="toothbrushing" class="state">
-    <img src="../assets/breakfast.png" id="breakfast" class="state">
-    <img src="../assets/hairbrushing.png" id="hairbrushing" class="state">
-    <img src="../assets/bus.png" id="bus" class="state">
     <audio :src="`${publicPath}ding.mp3`" id="audio"></audio>
     <ul id="messages">
       <li v-for="item in messages">
@@ -21,10 +21,13 @@
 </template>
 
 <script>
+import State from './State.vue';
+
 let interval = null
 
 export default {
   name: 'HelloWorld',
+  components: {State},
   props: {
     msg: String
   },
@@ -75,7 +78,6 @@ export default {
           state.active = true
           console.log(`${state.image} is now active`)
           this.messages.unshift(`Time to ${state.label}!`)
-          document.getElementById(state.image).className = 'state active'
           sound.play()
         }
       })
